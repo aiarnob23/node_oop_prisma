@@ -1,0 +1,26 @@
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: practise
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aiarnob23
+      POSTGRES_PASSWORD: aiarnob23
+      POSTGRES_DB: practise
+    ports:
+      - "6090:5432" 
+    volumes:
+      - practise:/var/lib/postgresql/data
+    networks:
+      - practise
+
+networks:
+  practise:
+    driver: bridge
+    name: practise
+
+volumes:
+  practise:
+    driver: local
+    name: practise
