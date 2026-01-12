@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
   provider = "prisma-client-js"
@@ -22,4 +17,138 @@ model Arnob {
   id    String @id @default(uuid())
   email String @unique
   password String
+}
+
+enum UserRole {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum SubmissionType {
+  THESIS
+  RESEARCH_PAPER
+  PROJECT
+  PROPOSAL
+  COURSE_WORK
+}
+
+enum SubmissionStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  REVISION_REQUIRED
+  APPROVED
+  REJECTED
+}
+
+
+// ============================
+// USER & AUTH
+// ============================
+model User {
+  id        String     @id @default(uuid())
+  name      String
+  email     String     @unique
+  password  String
+  roles     UserRole[]
+  isActive  Boolean    @default(true)
+
+  // Relations
+  submissions Submission[] @relation("StudentSubmissions")
+  reviews     Review[]
+  feedbacks   Feedback[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================
+// SUBMISSION
+// ============================
+model Submission {
+  id          String            @id @default(uuid())
+  title       String
+  description String?
+  type        SubmissionType
+  status      SubmissionStatus @default(DRAFT)
+  isPublic    Boolean           @default(false)
+
+  studentId String
+  student   User @relation("StudentSubmissions", fields: [studentId], references: [id])
+
+  versions    SubmissionVersion[]
+  feedbacks  Feedback[]
+  reviews    Review[]
+  similarity SimilarityCheck?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================
+// VERSIONED FILE STORAGE
+// ============================
+model SubmissionVersion {
+  id           String   @id @default(uuid())
+  submissionId String
+  submission   Submission @relation(fields: [submissionId], references: [id])
+
+  versionNumber Int
+  fileName      String
+  fileUrl       String
+  fileType      String // pdf, docx, zip, etc.
+
+  uploadedAt DateTime @default(now())
+
+  @@unique([submissionId, versionNumber])
+}
+
+// ============================
+// FEEDBACK SYSTEM
+// ============================
+model Feedback {
+  id           String   @id @default(uuid())
+  submissionId String
+  submission   Submission @relation(fields: [submissionId], references: [id])
+
+  evaluatorId String
+  evaluator   User @relation(fields: [evaluatorId], references: [id])
+
+  strengths   String?
+  weaknesses  String?
+  suggestions String?
+
+  createdAt DateTime @default(now())
+}
+
+// ============================
+// REVIEW / EVALUATION
+// ============================
+model Review {
+  id           String   @id @default(uuid())
+  submissionId String
+  submission   Submission @relation(fields: [submissionId], references: [id])
+
+  reviewerId String
+  reviewer   User @relation(fields: [reviewerId], references: [id])
+
+  decision   SubmissionStatus
+  comment    String?
+
+  reviewedAt DateTime @default(now())
+}
+
+// ============================
+// SIMILARITY CHECK (INTERNAL)
+// ============================
+model SimilarityCheck {
+  id           String   @id @default(uuid())
+  submissionId String   @unique
+  submission   Submission @relation(fields: [submissionId], references: [id])
+
+  similarityScore Float
+  report         String   // JSON or text explanation
+
+  checkedAt DateTime @default(now())
 }

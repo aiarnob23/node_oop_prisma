@@ -2,25 +2,25 @@
 services:
   postgres:
     image: postgres:17
-    container_name: practise
+    container_name: node_prisma_oop
     restart: unless-stopped
     environment:
       POSTGRES_USER: aiarnob23
       POSTGRES_PASSWORD: aiarnob23
-      POSTGRES_DB: practise
+      POSTGRES_DB: node_prisma_oop
     ports:
-      - "6090:5432" 
+      - "6666:5432" 
     volumes:
-      - practise:/var/lib/postgresql/data
+      - node_prisma_oop:/var/lib/postgresql/data
     networks:
-      - practise
+      - node_prisma_oop
 
 networks:
-  practise:
+  node_prisma_oop:
     driver: bridge
-    name: practise
+    name: node_prisma_oop
 
 volumes:
-  practise:
+  node_prisma_oop:
     driver: local
-    name: practise
+    name: node_prisma_oop

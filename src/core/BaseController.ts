@@ -6,8 +6,6 @@ import { ApiResponse } from "../types/types";
 
 export abstract class BaseController {
 
-
-
     // send a successful response
     protected sendResponse<T>(
         res: Response,
