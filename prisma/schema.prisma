@@ -8,147 +8,67 @@ datasource db {
   provider = "postgresql"
 }
 
-model Test {
-  id    String @id @default(uuid())
-  email String @unique
-}
-
-model Arnob {
-  id    String @id @default(uuid())
-  email String @unique
-  password String
-}
+// --------------------------------------
+// ENUMS
+// --------------------------------------
 
 enum UserRole {
-  STUDENT
-  TEACHER
-  ADMIN
+  admin
+  user
 }
 
-enum SubmissionType {
-  THESIS
-  RESEARCH_PAPER
-  PROJECT
-  PROPOSAL
-  COURSE_WORK
+enum AccountStatus {
+  active
+  inactive
+  suspended
+  pending_verification
 }
 
-enum SubmissionStatus {
-  DRAFT
-  SUBMITTED
-  UNDER_REVIEW
-  REVISION_REQUIRED
-  APPROVED
-  REJECTED
+enum OTPType {
+  email_verification
+  login_verification
+  password_reset
+  two_factor
 }
 
 
-// ============================
-// USER & AUTH
-// ============================
+//----------------------------------
+// MODELS
+//----------------------------------
+
 model User {
-  id        String     @id @default(uuid())
-  name      String
-  email     String     @unique
-  password  String
-  roles     UserRole[]
-  isActive  Boolean    @default(true)
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email String @unique
+  username String? @unique
+  firstName String 
+  lastName String?
+  displayName String?
+  role UserRole @default(user)
+  status AccountStatus @default(pending_verification)
+  password String
+  emailVerifiedAt DateTime?
+  avatarUrl String?
 
-  // Relations
-  submissions Submission[] @relation("StudentSubmissions")
-  reviews     Review[]
-  feedbacks   Feedback[]
+  //---LMS fields ---
+  isDeleted Boolean @default(false)
+  lastLoginAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  deletedAt DateTime?
 
+  otps OTP[]
+}
+
+model OTP{
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  identifier String
+  code Int
+  type OTPType
+  expiresAt DateTime
+  verified Boolean @default(false)
+  attempts Int @default(0)
+  userId String? @db.Uuid
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-// ============================
-// SUBMISSION
-// ============================
-model Submission {
-  id          String            @id @default(uuid())
-  title       String
-  description String?
-  type        SubmissionType
-  status      SubmissionStatus @default(DRAFT)
-  isPublic    Boolean           @default(false)
-
-  studentId String
-  student   User @relation("StudentSubmissions", fields: [studentId], references: [id])
-
-  versions    SubmissionVersion[]
-  feedbacks  Feedback[]
-  reviews    Review[]
-  similarity SimilarityCheck?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// ============================
-// VERSIONED FILE STORAGE
-// ============================
-model SubmissionVersion {
-  id           String   @id @default(uuid())
-  submissionId String
-  submission   Submission @relation(fields: [submissionId], references: [id])
-
-  versionNumber Int
-  fileName      String
-  fileUrl       String
-  fileType      String // pdf, docx, zip, etc.
-
-  uploadedAt DateTime @default(now())
-
-  @@unique([submissionId, versionNumber])
-}
-
-// ============================
-// FEEDBACK SYSTEM
-// ============================
-model Feedback {
-  id           String   @id @default(uuid())
-  submissionId String
-  submission   Submission @relation(fields: [submissionId], references: [id])
-
-  evaluatorId String
-  evaluator   User @relation(fields: [evaluatorId], references: [id])
-
-  strengths   String?
-  weaknesses  String?
-  suggestions String?
-
-  createdAt DateTime @default(now())
-}
-
-// ============================
-// REVIEW / EVALUATION
-// ============================
-model Review {
-  id           String   @id @default(uuid())
-  submissionId String
-  submission   Submission @relation(fields: [submissionId], references: [id])
-
-  reviewerId String
-  reviewer   User @relation(fields: [reviewerId], references: [id])
-
-  decision   SubmissionStatus
-  comment    String?
-
-  reviewedAt DateTime @default(now())
-}
-
-// ============================
-// SIMILARITY CHECK (INTERNAL)
-// ============================
-model SimilarityCheck {
-  id           String   @id @default(uuid())
-  submissionId String   @unique
-  submission   Submission @relation(fields: [submissionId], references: [id])
-
-  similarityScore Float
-  report         String   // JSON or text explanation
-
-  checkedAt DateTime @default(now())
+  user User? @relation(fields: [userId] , references: [id], onDelete: SetNull)
 }
