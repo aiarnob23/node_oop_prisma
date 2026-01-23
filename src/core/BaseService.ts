@@ -29,6 +29,7 @@ export abstract class BaseService<TModel = any, TCreateInput = any, TUpdateInput
 
     protected abstract getModel(): any;
 
+    //find one
     protected async findOne(filters: any, include?: any): Promise<TModel | null> {
         try {
             return this.getModel().findFirst({ where: filters, include });
@@ -38,6 +39,7 @@ export abstract class BaseService<TModel = any, TCreateInput = any, TUpdateInput
         }
     }
 
+    //create
     protected async create(data: TCreateInput, include?: any): Promise<TModel> {
         try {
             const createData = this.options.enableAuditFields
@@ -51,7 +53,7 @@ export abstract class BaseService<TModel = any, TCreateInput = any, TUpdateInput
     }
 
 
-
+     //handle database
     private handleDatabaseError(error: any, operation: string): never {
         AppLogger.error(`Database error in ${this.modelName}.${operation}`, { error });
         if (error.code === 'P2025') throw new NotFoundError(`${this.modelName} not found`);

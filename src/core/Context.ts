@@ -1,12 +1,15 @@
+import { PrismaClient } from "@/generated/prisma";
 import { AppLogger } from "./ logging/logger";
 import { config } from "./config";
 import { prisma } from "./prisma";
 
 export class Context {
     public config: typeof config;
+    public prisma : PrismaClient;
 
     constructor() {
         this.config = config;
+        this.prisma = prisma;
     }
 
     //DB initialization

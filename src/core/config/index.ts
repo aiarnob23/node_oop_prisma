@@ -22,6 +22,21 @@ export const config = {
       max: parseInt(process.env.DB_POOL_MAX || '10'),
     },
   },
+
+  aws: {
+    region: process.env.AWS_REGION,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+  },
+  email: {
+    awsRegion: process.env.AWS_REGION,
+    awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    defaultFromEmail: process.env.DEFAULT_FROM_EMAIL,
+    defaultReplyToEmail: process.env.DEFAULT_REPLY_TO_EMAIL,
+    templatePath: process.env.EMAIL_TEMPLATE_PATH,
+    defaultFromName: process.env.DEFAULT_FROM_NAME,
+  },
   logging: {
     level: process.env.LOG_LEVEL || 'info',
     file: {
@@ -29,18 +44,18 @@ export const config = {
       path: process.env.LOG_FILE_PATH || 'logs/app.log',
     },
   },
-      security: {
-        cors: {
-            allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || ['*'],
-        },
-        rateLimit: {
-            windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
-            max: parseInt(process.env.RATE_LIMIT_MAX || '100'),
-        },
-        jwt: {
-            secret: process.env.JWT_SECRET,
-            expiresIn: process.env.JWT_EXPIRES_IN || '1d',
-            issuer: process.env.JWT_ISSUER || 'ignitor-app',
-        },
+  security: {
+    cors: {
+      allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || ['*'],
     },
+    rateLimit: {
+      windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
+      max: parseInt(process.env.RATE_LIMIT_MAX || '100'),
+    },
+    jwt: {
+      secret: process.env.JWT_SECRET,
+      expiresIn: process.env.JWT_EXPIRES_IN || '1d',
+      issuer: process.env.JWT_ISSUER || 'ignitor-app',
+    },
+  },
 }

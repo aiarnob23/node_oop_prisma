@@ -1,11 +1,10 @@
-
-import { Response } from "express";
+import { Request, Response } from "express";
 import { HTTPStatusCode } from "../types/HTTPStatusCode";
 import { ApiResponse } from "../types/types";
-
+import { AppLogger } from "./ logging/logger";
 
 export abstract class BaseController {
-
+    
     // send a successful response
     protected sendResponse<T>(
         res: Response,
@@ -29,10 +28,31 @@ export abstract class BaseController {
 
     //send a created response
     protected sendCreatedResponse<T>(
-        res:Response,
-        data:T,
-        message:string = 'Resource created successfully'
-    ):Response<ApiResponse<T>>{
-       return this.sendResponse(res,message,HTTPStatusCode.CREATED,data);
+        res: Response,
+        data: T,
+        message: string = 'Resource created successfully'
+    ): Response<ApiResponse<T>> {
+        return this.sendResponse(res, message, HTTPStatusCode.CREATED, data);
     }
+
+   /**
+    * Log controller action
+    */
+   protected logAction(action:string, req:Request, metaData?:any):void{
+    AppLogger.info(`Controller action : ${action}`,{
+        requestId : (req as any).id,
+        userId: (req as any).userId,
+        method:req.method,
+        path:req.path,
+        ...metaData
+    })
+   }
+
+   /**
+     * Extract user ID from request (assuming it's set by auth middleware)
+     */
+    protected getUserId(req:Request):string|undefined{
+        return (req as any).userId;
+    }
+
 }

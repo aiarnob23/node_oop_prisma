@@ -72,3 +72,5 @@ model OTP{
   updatedAt DateTime @updatedAt
   user User? @relation(fields: [userId] , references: [id], onDelete: SetNull)
 }
+
+

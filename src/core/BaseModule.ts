@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { IgnitorModule } from "./IgnitorModule";
-import { Context } from "./Context";
 import { AppLogger } from "./ logging/logger";
+import { Context } from "./Context";
 
 export abstract class BaseModule implements IgnitorModule {
     public abstract readonly name: string;

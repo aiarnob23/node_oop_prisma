@@ -1,4 +1,5 @@
 
+import { password } from 'bun';
 import { z } from 'zod';
 
 // --------------------
@@ -89,8 +90,32 @@ export const AuthValidation = {
         .transform(data => {
             const { confirmPassword, ...rest } = data;
             return rest;
-        })
+        }),
+
+    // --------------------
+    // Login Validation
+    // --------------------
+    login:z
+    .object({
+        email:emailSchema,
+        password:z.string().min(1,'Password is required'),
+    })
+    .strict(),
+
+    // --------------------
+    // Email Verification Validation
+    // --------------------
+    verifyEmail:z
+    .object({
+        email:emailSchema,
+        code:otpCodeSchema,
+    })
+    .strict(),
+
+
 }
 
 //Type exports
 export type RegisterInput = z.infer<typeof AuthValidation.register>;
+export type LoginInput = z.infer<typeof AuthValidation.login>;
+export type verifyEmailInput = z.infer<typeof AuthValidation.verifyEmail>;
