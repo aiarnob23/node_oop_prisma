@@ -33,7 +33,7 @@ export interface SendOTPInput {
 
 export interface verifyOTPInput {
     identifier: string;
-    code: string;
+    code: number;
     type: OTPType;
 }
 
@@ -41,7 +41,7 @@ export interface OTPResult {
     success: boolean;
     message: string;
     expiresAt?: Date;
-    attemptsRemaining: number;
+    attemptsRemaining?: number;
 }
 
 export class OTPService {
@@ -146,6 +146,74 @@ export class OTPService {
 
     }
 
+
+    /**
+       * Verify OTP code and delete after successful verification
+       */
+    async verifyOTP(data: verifyOTPInput): Promise<OTPResult> {
+        const { identifier, code, type } = data;
+        const email = this.getEmailFromIdentifier(identifier);
+
+        const numericCode = code;
+        if (isNaN(numericCode) || numericCode < 100000 || numericCode > 999999) {
+            throw new BadRequestError('Invalid OTP format. Please enter a 6-digit code.');
+        }
+
+        const otpRecord = await this.prisma.oTP.findFirst({
+            where: { identifier: email, type, verified: false },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        if (!otpRecord) {
+            throw new BadRequestError('Invalid or expired OTP');
+        }
+
+        if (new Date() > otpRecord.expiresAt) {
+            await this.prisma.oTP.update({
+                where: { id: otpRecord.id },
+                data: { verified: true },
+            });
+            throw new BadRequestError('OTP has expired. Please request a new one.');
+        }
+
+        if (otpRecord.attempts >= this.MAX_ATTEMPTS) {
+            await this.prisma.oTP.delete({ where: { id: otpRecord.id } });
+            throw new BadRequestError(
+                'Maximum verification attemps exceeded. Please request a new OTP.'
+            );
+        }
+
+        if (otpRecord.code !== numericCode) {
+            const newAttempts = otpRecord.attempts + 1;
+            if (newAttempts >= this.MAX_ATTEMPTS) {
+                await this.prisma.oTP.delete({ where: { id: otpRecord.id } });
+                throw new BadRequestError('OTP has expired. Please request a new one.');
+            }
+
+            await this.prisma.oTP.update({
+                where: { id: otpRecord.id },
+                data: { attempts: newAttempts },
+            })
+            const attemptsRemaining = this.MAX_ATTEMPTS - newAttempts;
+            throw new BadRequestError(`Invalid OTP code. ${attemptsRemaining} attempts remaining.`);
+        }
+
+        //OTP is valid
+        if (type === otpRecord.type && numericCode === otpRecord.code) {
+            await this.prisma.oTP.update({
+                where: { id: otpRecord.id },
+                data: { verified: true },
+            })
+        } else {
+            await this.prisma.oTP.delete({ where: { id: otpRecord.id } });
+        }
+
+        return {
+            success: true,
+            message: 'OTP verified successfully',
+        };
+
+    }
 
     //cleanup expired otps
     async cleanupExpiredOTPs(): Promise<number> {

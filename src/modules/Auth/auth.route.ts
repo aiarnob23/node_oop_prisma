@@ -25,9 +25,18 @@ export class AuthRoutes {
             }),
             asyncHandler((req: Request, res: Response) => this.authController.register(req, res))
         );
+
+        //verify email
+        this.router.post(
+            '/verify-email',
+            validateRequest({
+                body: AuthValidation.verifyEmail,
+            }),
+            asyncHandler((req: Request, res: Response) => this.authController.verifyEmail(req, res))
+        )
     }
 
-    public getRouter():Router{
+    public getRouter(): Router {
         return this.router;
     }
 }

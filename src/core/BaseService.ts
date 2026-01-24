@@ -52,8 +52,28 @@ export abstract class BaseService<TModel = any, TCreateInput = any, TUpdateInput
         }
     }
 
+    /**
+     * Update a record by ID with optional SSE broadcast
+     */
 
-     //handle database
+    protected async updateById(
+        id: string | number,
+        data: TUpdateInput,
+        include?: any,
+    ): Promise<TModel> {
+        try {
+            const updateData = this.options.enableAuditFields ?
+                { ...data, updatedAt: new Date() }
+                : data
+
+            return await this.getModel().update({ where: { id }, data: updateData, include });
+        } catch (error) {
+            return this.handleDatabaseError(error, 'updateById');
+        }
+    }
+
+
+    //handle database
     private handleDatabaseError(error: any, operation: string): never {
         AppLogger.error(`Database error in ${this.modelName}.${operation}`, { error });
         if (error.code === 'P2025') throw new NotFoundError(`${this.modelName} not found`);
