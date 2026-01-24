@@ -26,6 +26,15 @@ export class AuthRoutes {
             asyncHandler((req: Request, res: Response) => this.authController.register(req, res))
         );
 
+        // Login user
+        this.router.post(
+            '/login',
+            validateRequest({
+                body: AuthValidation.login,
+            }),
+            asyncHandler((req: Request, res: Response) => this.authController.login(req, res))
+        );
+
         //verify email
         this.router.post(
             '/verify-email',
@@ -34,6 +43,29 @@ export class AuthRoutes {
             }),
             asyncHandler((req: Request, res: Response) => this.authController.verifyEmail(req, res))
         )
+
+        // Resend email verification
+        this.router.post(
+            '/resend-email-verification',
+            validateRequest({
+                body: AuthValidation.resendEmailVerification,
+            }),
+            asyncHandler((req: Request, res: Response) =>
+                this.authController.resendEmailVerification(req, res)
+            )
+        );
+
+        // Forgot password - send reset code
+        this.router.post(
+            '/forgot-password',
+            validateRequest({
+                body: AuthValidation.forgotPassword,
+            }),
+            asyncHandler((req: Request, res: Response) =>
+                this.authController.forgotPassword(req, res)
+            )
+        );
+
     }
 
     public getRouter(): Router {

@@ -95,23 +95,34 @@ export const AuthValidation = {
     // --------------------
     // Login Validation
     // --------------------
-    login:z
-    .object({
-        email:emailSchema,
-        password:z.string().min(1,'Password is required'),
-    })
-    .strict(),
+    login: z
+        .object({
+            email: emailSchema,
+            password: z.string().min(1, 'Password is required'),
+        })
+        .strict(),
 
     // --------------------
     // Email Verification Validation
     // --------------------
-    verifyEmail:z
-    .object({
-        email:emailSchema,
-        code:otpCodeSchema,
-    })
-    .strict(),
-
+    verifyEmail: z
+        .object({
+            email: emailSchema,
+            code: otpCodeSchema,
+        })
+        .strict(),
+    // Resend email verification validation
+    resendEmailVerification: z
+        .object({
+            email: emailSchema,
+        })
+        .strict(),
+    // Forgot password validation
+    forgotPassword: z
+        .object({
+            email: emailSchema,
+        })
+        .strict(),
 
 }
 
@@ -119,3 +130,5 @@ export const AuthValidation = {
 export type RegisterInput = z.infer<typeof AuthValidation.register>;
 export type LoginInput = z.infer<typeof AuthValidation.login>;
 export type verifyEmailInput = z.infer<typeof AuthValidation.verifyEmail>;
+export type ResendEmailVerificationInput = z.infer<typeof AuthValidation.resendEmailVerification>;
+export type ForgotPasswordInput = z.infer<typeof AuthValidation.forgotPassword>;
