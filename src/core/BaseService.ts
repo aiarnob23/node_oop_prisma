@@ -1,6 +1,7 @@
 import { PrismaClient } from "@/generated/prisma";
 import { AppLogger } from "./ logging/logger";
 import { DatabaseError, NotFoundError } from "./errors/AppError";
+import { PaginationOptions, PaginationResult } from "@/types/types";
 
 export interface BaseServiceOptions {
     enableSoftDelete?: boolean;
@@ -29,16 +30,6 @@ export abstract class BaseService<TModel = any, TCreateInput = any, TUpdateInput
 
     protected abstract getModel(): any;
 
-    //find one
-    protected async findOne(filters: any, include?: any): Promise<TModel | null> {
-        try {
-            return this.getModel().findFirst({ where: filters, include });
-        }
-        catch (error) {
-            return this.handleDatabaseError(error, 'findOne');
-        }
-    }
-
     //create
     protected async create(data: TCreateInput, include?: any): Promise<TModel> {
         try {
@@ -52,10 +43,56 @@ export abstract class BaseService<TModel = any, TCreateInput = any, TUpdateInput
         }
     }
 
-    /**
-     * Update a record by ID with optional SSE broadcast
-     */
+    //find one
+    protected async findOne(filters: any, include?: any): Promise<TModel | null> {
+        try {
+            return this.getModel().findFirst({ where: filters, include });
+        }
+        catch (error) {
+            return this.handleDatabaseError(error, 'findOne');
+        }
+    }
 
+    //find by id
+    protected async findById(id: string | number, include?: any): Promise<TModel> {
+        try {
+            return await this.getModel().findFirst({ where: { id }, include });
+        } catch (error) {
+            return this.handleDatabaseError(error, 'findById');
+        }
+    }
+
+    //find many
+    protected async findMany(
+        filters: any = {},
+        pagination?: Partial<PaginationOptions>,
+        orderBy?: Record<string, 'asc' | 'desc'>,
+        include?: any,
+        select?: any
+    ): Promise<PaginationResult<TModel>> {
+        try {
+            const where = this.buildWhereClause(filters);
+            const finalPagination = this.normalizePagination(pagination);
+            orderBy: orderBy || { id: 'desc' };
+
+            const [data, total] = await Promise.all([
+                this.getModel().findMany({
+                    where,
+                    skip: finalPagination.offset,
+                    take: finalPagination.limit,
+                    orderBy,
+                    include,
+                    select,
+                }),
+                this.getModel().count({ where }),
+            ]);
+            return this.buuildPaginationResult(data, total, finalPagination);
+        } catch (error) {
+            return this.handleDatabaseError(error, 'findMany');
+        }
+    }
+
+    //update by id
     protected async updateById(
         id: string | number,
         data: TUpdateInput,
@@ -72,11 +109,34 @@ export abstract class BaseService<TModel = any, TCreateInput = any, TUpdateInput
         }
     }
 
-
-    //handle database
+    //-------------handle database error------------------------------------//
     private handleDatabaseError(error: any, operation: string): never {
         AppLogger.error(`Database error in ${this.modelName}.${operation}`, { error });
         if (error.code === 'P2025') throw new NotFoundError(`${this.modelName} not found`);
         throw new DatabaseError(`Database operation failed: ${this.modelName}.${operation}`, { originalError: error.message, code: error.code });
+    }
+
+    //-------------------------------pagination--------------------------------//
+    //build normalize pagination
+    private normalizePagination(pagination?: Partial<PaginationOptions>): PaginationOptions {
+        const page = Math.max(1, pagination?.page || 1);
+        const limit = Math.min(
+            this.options.maxPageSize!,
+            Math.max(1, pagination?.limit || this.options.defaultPageSize!)
+        );
+        const offset = (page - 1) * limit;
+        return { page, limit, offset };
+    }
+
+    //build pagination result
+    private buuildPaginationResult<T>(data: T[], total: number, pagination: PaginationOptions): PaginationResult<T> {
+        const totalPages = Math.ceil(total / pagination.limit);
+        return { data, total, page: pagination.page, limit: pagination.limit, totalPages, hasNext: pagination.page < totalPages, hasPrevious: pagination.page > 1 };
+    }
+
+    //build where clause
+    protected buildWhereClause(filters: any): any {
+        if (this.options.enableSoftDelete) return { ...filters, deletedAt: null };
+        return filters;
     }
 }

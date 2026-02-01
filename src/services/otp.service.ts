@@ -276,6 +276,22 @@ export class OTPService {
         });
     }
 
+    /**
+     * Emergency cleanup - delete all OTPs for a specific user (useful for account deletion)
+     */
+    async cleanupUserOTPs(identifier: string): Promise<number> {
+        const result = await this.prisma.oTP.deleteMany({
+            where: { identifier },
+        });
+
+        AppLogger.info('Cleaned up user OTPs', {
+            identifier: this.maskEmail(identifier),
+            deletedCount: result.count,
+        });
+
+        return result.count;
+    }
+
     //generate otp code
     private generateOTPCode(): number {
         return crypto.randomInt(100000, 999999);

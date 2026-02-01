@@ -3,6 +3,7 @@ import { AuthController } from "./auth.controller";
 import { validateRequest } from "@/middleware/validation";
 import { AuthValidation } from "./auth.validation";
 import { asyncHandler } from "@/middleware/asyncHandler";
+import { authenticate, authorize } from "@/middleware/auth";
 
 export class AuthRoutes {
     private router: Router;
@@ -65,6 +66,90 @@ export class AuthRoutes {
                 this.authController.forgotPassword(req, res)
             )
         );
+
+        // Reset password with OTP
+        this.router.post(
+            '/verify-reset-password-OTP',
+            validateRequest({
+                body: AuthValidation.verifyResetPasswordOTPInput,
+            }),
+            asyncHandler((req: Request, res: Response) =>
+                this.authController.verifyResetPasswordOTP(req, res)
+            )
+        );
+
+        // Reset password
+        this.router.post(
+            '/reset-password',
+            validateRequest({
+                body: AuthValidation.resetPassword,
+            }),
+            asyncHandler((req: Request, res: Response) =>
+                this.authController.resetPassword(req, res)
+            )
+        );
+
+        // Change password
+        this.router.post(
+            '/change-password',
+            authenticate,
+            validateRequest({
+                body: AuthValidation.changePassword,
+            }),
+            asyncHandler((req: Request, res: Response) =>
+                this.authController.changePassword(req, res)
+            )
+        );
+
+
+        // Verify token (useful for client-side token validation)
+        this.router.post(
+            '/verify',
+            authenticate,
+            asyncHandler((req: Request, res: Response) => this.authController.verifyToken(req, res))
+        );
+
+        // Refresh token
+        this.router.post(
+            '/refresh',
+            validateRequest({
+                body: AuthValidation.refreshToken,
+            }),
+            asyncHandler((req: Request, res: Response) =>
+                this.authController.refreshToken(req, res)
+            )
+        );
+
+        //-------------- Protected routes (authentication required)
+
+        // Get current user profile
+        this.router.get(
+            '/profile',
+            authenticate,
+            asyncHandler((req: Request, res: Response) => this.authController.getProfile(req, res))
+        );
+
+        // Get all users (admin only)
+        this.router.get(
+            '/users',
+            authenticate,
+            authorize('admin'),
+            asyncHandler((req: Request, res: Response) => this.authController.getUsers(req, res))
+        );
+
+        // Update user role (admin only)
+        this.router.patch(
+            'users/:userId/role',
+            authenticate,
+            authorize('admin'),
+            validateRequest({
+                params: AuthValidation.params.userId,
+                body: AuthValidation.updateRole,
+            }),
+            asyncHandler((req: Request, res: Response) =>
+                this.authController.updateUserRole(req, res)
+            )
+        )
 
     }
 

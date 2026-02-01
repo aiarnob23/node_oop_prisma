@@ -55,6 +55,7 @@ const usernameSchema = z
     .trim();
 
 
+
 // --------------------
 // AUTH VALIDATIONS
 // --------------------
@@ -124,6 +125,59 @@ export const AuthValidation = {
         })
         .strict(),
 
+    // Password reset OTP validation
+    verifyResetPasswordOTPInput: z
+        .object({
+            email: emailSchema,
+            code: otpCodeSchema,
+        })
+        .strict(),
+    //reset password validation
+    resetPassword: z
+        .object({
+            email: emailSchema,
+            newPassword: passwordSchema,
+        })
+        .strict(),
+    // Change password validation
+    changePassword: z
+        .object({
+            currentPassword: z.string().min(1, 'Current password is required'),
+            newPassword: passwordSchema,
+            confirmNewPassword: z.string(),
+        })
+        .strict()
+        .refine(data => data.newPassword === data.confirmNewPassword, {
+            message: 'New passwords do not match',
+            path: ['confirmNewPassword'],
+        })
+        .refine(data => data.currentPassword !== data.newPassword, {
+            message: 'New password must be different from current password',
+            path: ['newPassword'],
+        })
+        .transform(data => {
+            // Remove confirmNewPassword from the final object
+            const { confirmNewPassword, ...rest } = data;
+            return rest;
+        }),  
+    // Update role validation (admin only)
+    updateRole: z
+        .object({
+            role: roleSchema,
+        })
+        .strict(),
+        // Refresh token validation
+    refreshToken: z
+        .object({
+            token: z.string().min(1, 'Token is required').optional(), 
+        })
+        .strict(),
+    // Parameter validation
+    params: {
+        userId: z.object({
+            userId: z.string().min(1, 'User ID is required').uuid('User ID must be a valid UUID'),
+        }),
+    },
 }
 
 //Type exports
@@ -132,3 +186,8 @@ export type LoginInput = z.infer<typeof AuthValidation.login>;
 export type verifyEmailInput = z.infer<typeof AuthValidation.verifyEmail>;
 export type ResendEmailVerificationInput = z.infer<typeof AuthValidation.resendEmailVerification>;
 export type ForgotPasswordInput = z.infer<typeof AuthValidation.forgotPassword>;
+export type UpdateRoleInput = z.infer<typeof AuthValidation.updateRole>;
+export type VerifyResetPasswordOTPInput = z.infer<
+    typeof AuthValidation.verifyResetPasswordOTPInput
+>;
+export type ResetPasswordInput = z.infer<typeof AuthValidation.resetPassword>;
