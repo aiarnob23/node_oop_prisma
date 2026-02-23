@@ -92,6 +92,19 @@ export abstract class BaseService<TModel = any, TCreateInput = any, TUpdateInput
         }
     }
 
+    /**
+    * Check if a record exists
+    */
+    protected async exists(filters: any): Promise<boolean> {
+        try {
+            const where = this.buildWhereClause(filters);
+            const count = await this.getModel().count({ where });
+            return count > 0;
+        } catch (error) {
+            return this.handleDatabaseError(error, 'exists');
+        }
+    }
+
     //update by id
     protected async updateById(
         id: string | number,
